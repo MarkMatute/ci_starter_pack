@@ -16,11 +16,4 @@ class User_m extends MY_Model {
     $this->table = 'Account';
   }
 
-  /**
-   * Get Account Roles
-   */
-  public function getUserRoles($id) {
-    
-  }
-
 }

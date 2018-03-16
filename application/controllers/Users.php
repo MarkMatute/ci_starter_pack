@@ -10,7 +10,9 @@ class Users extends MY_Controller {
    */
   public function __construct() {
     parent::__construct();
-    $this->for_authenticated();
+    $this->for_authenticated(array(
+      'SuperAdmin'
+    ));
     $this->load->model('User_m');
   }
 
@@ -38,6 +40,7 @@ class Users extends MY_Controller {
     $this->load->model('Role_m');
     $this->data['user'] = $user;
     $this->data['roles'] = $this->Role_m->get_all();
+    $this->data['user_roles'] = $this->authenticator->getRolesForUser($id);
     $this->data['action'] = base_url('users/update/'.$id);
     $this->load_view('user/edit');
   }
@@ -106,7 +109,8 @@ class Users extends MY_Controller {
       $data = array(
         'email' => $this->input->post('email'),
       );
-      $this->response['status'] = $this->User_m->update($id, $data);
+      $roles = $this->input->post('role');
+      $this->response['status'] = $this->authenticator->update($id, $data, $roles);
     }
     $this->return_json();
   }

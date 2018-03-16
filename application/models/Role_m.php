@@ -15,5 +15,5 @@ class Role_m extends MY_Model {
     parent::__construct();
     $this->table = 'Role';
   }
-
+  
 }

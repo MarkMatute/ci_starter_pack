@@ -46,12 +46,13 @@ class MY_Controller extends CI_Controller {
    * Check if access is authenticated
    */
   public function for_authenticated($acl = array()) {
-    if (count($acl) > 0) {
-      // TODO
-    } else {
-      if(!$this->authenticator->auth_user()) {
-        show_401();
-      }
+    // Session Check
+    if(!$this->authenticator->auth_user()) {
+      $this->show_401();
+    }
+    // ACL Check
+    if (count($acl) > 0 && !$this->authenticator->check_acl($acl)) {
+      $this->show_401();
     }
   }
 

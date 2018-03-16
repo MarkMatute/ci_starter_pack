@@ -8,8 +8,9 @@ class Authenticator {
   protected $CI;
   protected $table = 'Account';
   protected $roleMappingTable = 'RoleMapping';
+  protected $roleTable = 'Role';
   protected $session_name = 'auth_user';
-
+  protected $session_roles = 'auth_roles';
   /**
    * Constructor
    */
@@ -27,6 +28,8 @@ class Authenticator {
     if (!$user) return FALSE;
     if ($this->check_password($user->password, $password)) {
       $this->CI->session->set_userdata($this->session_name, $user);
+      $roles = $this->getRolesForUser($user->id, 'role_name');
+      $this->CI->session->set_userdata($this->session_roles, $roles);
       return TRUE;
     } else {
       return FALSE;
@@ -37,8 +40,16 @@ class Authenticator {
    * Check ACL
    * TODO
    */
-  public function check_role($allowed_roles) {
-    
+  public function check_acl($allowed_roles) {
+    $auth_roles = $this->auth_roles();
+    $is_allowed = TRUE;
+    foreach($auth_roles as $auth_role) {
+      if(!in_array($auth_role, $allowed_roles)){
+        $is_allowed = FALSE;
+        break;
+      }
+    }
+    return $is_allowed;
   }
 
   /**
@@ -56,10 +67,41 @@ class Authenticator {
   }
 
   /**
+   * Authenticated Roles
+   */
+  public function auth_roles() {
+    return $this->CI->session->userdata($this->session_roles);
+  }
+
+  /**
+   * Get Roles for User
+   */
+  public function getRolesForUser($id = NULL, $roleName = FALSE) {
+    $roles = array();
+    if (!$roleName) {
+      $this->CI->db->select('role_id');
+      $this->CI->db->where('account_id', $id);
+      foreach($this->CI->db->get('RoleMapping')->result() as $role) {
+        $roles[] = $role->role_id;
+      }
+    } else {
+      $query = "SELECT r.name FROM ".$this->roleTable.' as r ';
+      $query .= "INNER JOIN ".$this->roleMappingTable.' as rm ON rm.role_id = r.id ';
+      $query .= "WHERE rm.account_id = ?";
+      $params = array($id);
+      $roleNames = $this->CI->db->query($query, $params)->result();
+      foreach($roleNames as $role) {
+        $roles[] = $role->name;
+      }
+    }
+    return $roles;
+  }
+  /**
    * Sign Up
    */
   public function sign_up($data, $roles) {
     $data['password'] = $this->encrypt_password($data['password']);
+    $data['isActive'] = 1;
     $this->CI->db->insert($this->table, $data);
     $user_id = $this->CI->db->insert_id();
     return $this->saveRoleMapping($user_id, $roles);
@@ -88,6 +130,22 @@ class Authenticator {
     return $this->CI->db->update($this->table, array(
       'password' => $encryptedPassword
     ));
+  }
+
+  /**
+   * Update Account
+   */
+  public function update($id, $data, $roles) {
+    // Update Account Data
+    $this->CI->db->where('id', $id);
+    $this->CI->db->update($this->table, $data);
+
+    // Reset User Roles
+    $this->CI->db->where('account_id', $id);
+    $this->CI->db->delete($this->roleMappingTable);
+
+    // Save Roles
+    return $this->saveRoleMapping($id, $roles);
   }
 
   /**

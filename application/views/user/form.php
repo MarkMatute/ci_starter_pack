@@ -9,7 +9,7 @@
     <span class="text-danger pull-right err-message" id="role-error"></span>
     <select class="form-control" multiple="multiple" id="role">
       <?php foreach($roles as $role): ?>
-        <option value="<?php echo $role->id ?>" selected="selected">
+        <option value="<?php echo $role->id ?>" <?php echo @in_array($role->id, $user_roles, TRUE)?'selected="selected"':'' ?>>
           <?php echo $role->name ?>
         </option>
       <?php endforeach; ?>

@@ -11,17 +11,13 @@ class Debug extends MY_Controller {
   }
 
   public function index() {
-    $this->authenticator->update_password(6, 'Password');
-  }
-  
-  public function insert_users() {
-    $this->load->model('User_m');
-    for ($i =0; $i < 15; $i++) {
-      $this->User_m->save(array(
-        'email' => $i.'@gmail.com',
-        'password' => 'Password'
-      ));
-    }
+    $this->authenticator->sign_up(array(
+      'email' => 'mark@mark.com',
+      'password' => 'password'
+    ),array(
+      '1'
+    ));
+    echo 'User Created';
   }
 
 }
